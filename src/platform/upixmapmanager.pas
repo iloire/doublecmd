@@ -394,6 +394,9 @@ uses
   {$IFDEF RabbitVCS}
   , uRabbitVCS
   {$ENDIF}
+  {$IFDEF DARWIN}
+  , uDarwinSymbols
+  {$ENDIF}
   ;
 
 {$IF DEFINED(MSWINDOWS)}
@@ -569,6 +572,11 @@ begin
   // If the name is not full path then treat it as MIME type.
   if GetPathType(sFileName) = ptNone then
   begin
+{$IFDEF DARWIN}
+    // Toolbar commands get SF Symbols instead of the bundled theme icons
+    bmStandartBitmap := CommandSymbolBitmap(sFileName, iIconSize);
+    if bmStandartBitmap = nil then
+{$ENDIF}
     bmStandartBitmap := LoadIconThemeBitmap(sFileName, iIconSize);
     if fromWhatItWasLoaded<> nil then fromWhatItWasLoaded^ := fwbwlIconThemeBitmap;
   end

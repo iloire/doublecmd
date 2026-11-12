@@ -47,7 +47,7 @@ function OptionsPageIcon(const EditorClassName: String; Size, Scale: Integer): T
 implementation
 
 uses
-  MacOSAll, CocoaAll, CocoaUtils, Cocoa_Extra, uClassesEx;
+  CocoaAll, uDarwinSymbols;
 
 type
   TIconSpec = record
@@ -223,93 +223,14 @@ begin
   Result:= ICONS[High(ICONS)];
 end;
 
-function SymbolImage(const Name: String; PointSize: CGFloat): NSImage;
-var
-  Config: NSImageSymbolConfiguration;
-begin
-  Result:= NSImage.imageWithSystemSymbolName_accessibilityDescription(StrToNSString(Name), nil);
-  if Result = nil then
-    Result:= NSImage.imageWithSystemSymbolName_accessibilityDescription(NSSTR('gearshape'), nil);
-  if Result = nil then Exit;
-  Config:= NSImageSymbolConfiguration.configurationWithPointSize(PointSize, 0.23 { medium });
-  Result:= Result.imageWithSymbolConfiguration(Config);
-end;
-
 function OptionsPageIcon(const EditorClassName: String; Size, Scale: Integer): TBitmap;
 var
   Spec: TIconSpec;
-  Px: Integer;
-  Rep: NSBitmapImageRep;
-  Symbol, Tinted: NSImage;
-  SymSize: NSSize;
-  R: NSRect;
-  Color: NSColor;
-  Data: NSData;
-  Stream: TBlobStream;
-  Png: TPortableNetworkGraphic;
 begin
-  Result:= nil;
-  if not NSImage.instancesRespondToSelector(ObjCSelector('imageWithSymbolConfiguration:')) then
-    Exit;
-
   Spec:= FindIcon(EditorClassName);
-  Px:= Size * Scale;
-  Symbol:= SymbolImage(Spec.Symbol, Px * 0.5);
-  if Symbol = nil then Exit;
-
-  // White glyph: draw the template symbol, then paint white over its pixels
-  SymSize:= Symbol.size;
-  Tinted:= NSImage.alloc.initWithSize(SymSize).autorelease;
-  Tinted.lockFocus;
-  Symbol.drawInRect(NSMakeRect(0, 0, SymSize.width, SymSize.height));
-  NSColor.whiteColor.set_;
-  NSRectFillUsingOperation(NSMakeRect(0, 0, SymSize.width, SymSize.height), NSCompositeSourceAtop);
-  Tinted.unlockFocus;
-
-  Rep:= NSBitmapImageRep.alloc.initWithBitmapDataPlanes_pixelsWide_pixelsHigh__colorSpaceName_bytesPerRow_bitsPerPixel(
-    nil, Px, Px, 8, 4, True, False, NSDeviceRGBColorSpace, 0, 0).autorelease;
-
-  NSGraphicsContext.classSaveGraphicsState;
-  try
-    NSGraphicsContext.setCurrentContext(NSGraphicsContext.graphicsContextWithBitmapImageRep(Rep));
-
-    // Badge: 1px inset so the rounded corners are not clipped
-    Color:= NSColor.colorWithCalibratedRed_green_blue_alpha(
-      ((Spec.Color shr 16) and $FF) / 255, ((Spec.Color shr 8) and $FF) / 255,
-      (Spec.Color and $FF) / 255, 1);
-    Color.setFill;
-    R:= NSMakeRect(Scale, Scale, Px - 2 * Scale, Px - 2 * Scale);
-    NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius(R, Px * 0.22, Px * 0.22).fill;
-
-    // Symbol, centred, fitted into 62% of the badge
-    if (SymSize.width > 0) and (SymSize.height > 0) then
-    begin
-      R.size.width:= Px * 0.62;
-      R.size.height:= R.size.width * SymSize.height / SymSize.width;
-      if R.size.height > Px * 0.62 then
-      begin
-        R.size.height:= Px * 0.62;
-        R.size.width:= R.size.height * SymSize.width / SymSize.height;
-      end;
-      R.origin.x:= (Px - R.size.width) / 2;
-      R.origin.y:= (Px - R.size.height) / 2;
-      Tinted.drawInRect_fromRect_operation_fraction(R, NSZeroRect, NSCompositeSourceOver, 1);
-    end;
-  finally
-    NSGraphicsContext.classRestoreGraphicsState;
-  end;
-
-  Data:= Rep.representationUsingType_properties(NSPNGFileType, nil);
-  Stream:= TBlobStream.Create(Data.bytes, Data.length);
-  Png:= TPortableNetworkGraphic.Create;
-  try
-    Png.LoadFromStream(Stream);
-    Result:= TBitmap.Create;
-    Result.Assign(Png);
-  finally
-    Png.Free;
-    Stream.Free;
-  end;
+  Result:= RenderSymbol(Spec.Symbol, Size * Scale, NSColor.whiteColor, RGBColor(Spec.Color));
+  if Result = nil then
+    Result:= RenderSymbol('gearshape', Size * Scale, NSColor.whiteColor, RGBColor(Spec.Color));
 end;
 
 end.
