@@ -1899,7 +1899,7 @@ begin
   gDriveBlackListUnmounted := False;
 
   { File views page }
-  gExtraLineSpan := {$IFnDEF DARWIN}2{$ELSE}8{$ENDIF};
+  gExtraLineSpan := {$IFnDEF DARWIN}2{$ELSE}4{$ENDIF};
   gFolderPrefix := '[';
   gFolderPostfix := ']';
   gRenameConfirmMouse := False;
@@ -1920,7 +1920,7 @@ begin
   { Fonts page }
   gFonts[dcfMain].Name := 'default';
   gFonts[dcfMain].Size := 10;
-  gFonts[dcfMain].Style := [fsBold];
+  gFonts[dcfMain].Style := [];
   gFonts[dcfMain].Quality := fqDefault;
   gFonts[dcfMain].MinValue := 6;
   gFonts[dcfMain].MaxValue := 200;
@@ -2187,7 +2187,7 @@ begin
   gShowCurDirTitleBar := False;
   gShowWarningMessages := True;
   gSpaceMovesDown := False;
-  gDirBrackets := True;
+  gDirBrackets := False;
   gInplaceRename := False;
   gInplaceRenameButton := True;
   gDblClickToParent := False;
@@ -2222,7 +2222,7 @@ begin
   gShowIcons := sim_all_and_exe;
   gShowIconsNew := gShowIcons;
   gIconOverlays := False;
-  gIconsSize := 32;
+  gIconsSize := 16;
   gIconsSizeNew := gIconsSize;
   gDiskIconsSize := 16;
   gDiskIconsAlpha := 50;
@@ -2412,7 +2412,7 @@ begin
   gRepeatPassword := True;
   gFirstTextSearch := True;
   gErrorFile := gpCfgDir + ExtractOnlyFileName(Application.ExeName) + '.err';
-  DefaultDateTimeFormat := FormatSettings.ShortDateFormat + ' hh:nn:ss';
+  DefaultDateTimeFormat := FormatSettings.ShortDateFormat + ' hh:nn';
   DefaultDateTimeFormatSync := 'yyyy.mm.dd hh:nn:ss';
 end;
 

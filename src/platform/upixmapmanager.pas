@@ -1721,7 +1721,7 @@ begin
   if FiDirIconID = -1 then
   {$ENDIF}
   FiDirIconID:= AddDefaultThemePixmap('folder');
-  FiUpDirIconID:= CheckAddThemePixmap('go-up');
+  FiUpDirIconID:= FiDirIconID;
   {$IF DEFINED(MSWINDOWS) OR DEFINED(XDG)}
   FiArcIconID := -1;
   if (gShowIcons > sim_standart) and (not (cimArchive in gCustomIcons)) then
