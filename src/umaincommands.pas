@@ -418,7 +418,7 @@ uses fOptionsPluginsBase, fOptionsPluginsDSX, fOptionsPluginsWCX,
      uStashFileSource, uStashFilesBackend,
      LCLVersion
      {$IFDEF DARWIN}
-     , uDarwinApplication, uDarwinPanel, uDarwinFileView, fPreferences
+     , uDarwinApplication, uDarwinPanel, uDarwinFileView
      {$ENDIF}
      ;
 
@@ -3046,14 +3046,6 @@ end;
 // Parameter is name of TOptionsEditorClass.
 procedure TMainCommands.cm_Options(const Params: array of string);
 begin
-{$IFDEF DARWIN}
-  // Plain Preferences window; it links to the full dialog via "Advanced..."
-  if Length(Params) = 0 then
-  begin
-    ShowPreferences;
-    Exit;
-  end;
-{$ENDIF}
   ShowOptions(GetDefaultParam(Params));
 end;
 
