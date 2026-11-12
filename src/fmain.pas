@@ -1178,6 +1178,9 @@ begin
 
   for I := 0 to pnlKeys.ControlCount - 1 do
     FunctionButtonsCaptions[I].ACaption := pnlKeys.Controls[I].Caption;
+{$IFDEF DARWIN}
+  FunctionButtonsCaptions[4].ACaption := rsF7NewFolder; // Finder wording for F7
+{$ENDIF}
 
   {$IF DEFINED(LCLGTK2)}
   // Workaround: "Layout and line"
@@ -5872,10 +5875,28 @@ begin
           begin
             Hotkey := HMForm.Hotkeys.FindByCommand(FunctionButtonsCaptions[I].ACommand);
             if Assigned(Hotkey) then
-              FunButton.Caption := FunctionButtonsCaptions[I].ACaption + ' ' + ShortcutsToText(Hotkey.Shortcuts);
+              FunButton.Caption := FunctionButtonsCaptions[I].ACaption +
+                {$IFDEF DARWIN}' - '{$ELSE}' '{$ENDIF} + ShortcutsToText(Hotkey.Shortcuts);
           end;
         end;
       end;
+{$IFDEF DARWIN}
+      // Commander One-style row: F3-F8 only, hairline separators between
+      // flat buttons (the panel colour shows through 1px gaps)
+      btnF9.Visible:= False;
+      btnF10.Visible:= False;
+      pnlKeys.Color:= clBtnShadow;
+      pnlKeys.ParentBackground:= False;
+      pnlKeys.ChildSizing.HorizontalSpacing:= 1;
+      pnlKeys.ChildSizing.TopBottomSpacing:= 1;
+      for I := 0 to pnlKeys.ControlCount - 1 do
+        if pnlKeys.Controls[I] is TSpeedButton then
+        begin
+          TSpeedButton(pnlKeys.Controls[I]).Flat:= True;
+          TSpeedButton(pnlKeys.Controls[I]).Transparent:= False;
+          TSpeedButton(pnlKeys.Controls[I]).Color:= clBtnFace;
+        end;
+{$ENDIF}
       UpdateGUIFunctionKeys;
     end;
 
@@ -6855,7 +6876,7 @@ begin
       H:= Max(H, AButton.Canvas.TextHeight(AButton.Caption));
     end;
   end;
-  pnlKeys.Height := H + 4;
+  pnlKeys.Height := H + {$IFDEF DARWIN}16{$ELSE}4{$ENDIF};
 end;
 
 procedure TfrmMain.ShowDrivesList(APanel: TFilePanelSelect);

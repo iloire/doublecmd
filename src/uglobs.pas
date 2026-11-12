@@ -2036,10 +2036,10 @@ begin
   gCurDir := True;
   gTabHeader := True;
   gStatusBar := True;
-  gCmdLine := {$IFnDEF DARWIN}True{$ELSE}False{$ENDIF};
+  gCmdLine := True;
   gLogWindow := False;
   gTermWindow := False;
-  gKeyButtons := {$IFnDEF DARWIN}True{$ELSE}False{$ENDIF};
+  gKeyButtons := True;
   gInterfaceFlat := True;
   gDriveInd := False;
   gDriveFreeSpace := True;

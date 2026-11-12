@@ -588,6 +588,7 @@ resourcestring
   rsOpenWithOther = 'Other';
   // File properties dialog
   rsPropsFolder = 'Directory';
+  rsF7NewFolder = 'New Folder';
   rsPropsFile = 'File';
   rsPropsSpChrDev = 'Special character device';
   rsPropsSpBlkDev = 'Special block device';
