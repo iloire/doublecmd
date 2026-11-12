@@ -71,7 +71,7 @@ var
   mate: TQLPreviewPanelMate;
   panel: QLPreviewPanel;
 begin
-  lclArray:= TDCCocoaApplication(NSApp).serviceMenuGetFilenames;
+  lclArray:= TDarwinApplicationUtil.getSelectedFilenames;
   if lclArray = nil then
     Exit;
 
@@ -158,7 +158,7 @@ var
   view: NSView;
   handler: TFinderTagsEditorPanelHandler;
 begin
-  filenames:= TDCCocoaApplication(NSApp).serviceMenuGetFilenames;
+  filenames:= TDarwinApplicationUtil.getSelectedFilenames;
   if length(filenames) = 0 then
     Exit;
 
@@ -182,10 +182,10 @@ var
   popupNSRect: NSRect;
   control: TWinControl;
 begin
-  if not TDCCocoaApplication(NSApp).serviceMenuIsReady then
+  if (DCApplication = nil) or not DCApplication.serviceMenuIsReady then
     exit;
 
-  lclArray:= TDCCocoaApplication(NSApp).serviceMenuGetFilenames;
+  lclArray:= TDarwinApplicationUtil.getSelectedFilenames;
   if lclArray = nil then
     Exit;
 
@@ -208,7 +208,7 @@ var
   lclArray: TStringArray;
   cocoaArray: NSArray;
 begin
-  lclArray:= TDCCocoaApplication(NSApp).serviceMenuGetFilenames;
+  lclArray:= TDarwinApplicationUtil.getSelectedFilenames;
   if lclArray = nil then
     Exit;
 

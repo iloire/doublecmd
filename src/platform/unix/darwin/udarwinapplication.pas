@@ -57,6 +57,8 @@ type
     class procedure openSystemSecurityPreferences_PrivacyAllFiles;
     class function hasFullDiskAccess: Boolean;
   public
+    class function getSelectedFilenames: TStringArray;
+  public
     class procedure installFNKeyTap;
     class procedure uninstallFNKeyTap;
   public
@@ -70,7 +72,20 @@ type
 
 procedure darwinOnMainMenuCreate( menu: NSMenu );
 
+// NSApp is a TDCCocoaApplication only when launched from doublecmd.app
+// (Info.plist NSPrincipalClass). Run as the bare binary it is a plain
+// TCocoaApplication, so callers must check for nil instead of casting.
+function DCApplication: TDCCocoaApplication;
+
 implementation
+
+function DCApplication: TDCCocoaApplication;
+begin
+  if Assigned(NSApp) and NSApp.isKindOfClass(TDCCocoaApplication) then
+    Result:= TDCCocoaApplication(NSApp)
+  else
+    Result:= nil;
+end;
 
 { TDCCocoaApplication }
 
@@ -177,10 +192,14 @@ class procedure TDarwinApplicationUtil.initServiceProvider(
   const isReadyFunc: TDarwinServiceMenuIsReadyFunc;
   const getFilenamesFunc: TDarwinServiceMenuGetFilenamesFunc);
 var
-  DCApp: TDCCocoaApplication Absolute NSApp;
+  DCApp: TDCCocoaApplication;
   sendTypes: NSArray;
   returnTypes: NSArray;
 begin
+  DCApp:= DCApplication;
+  if DCApp = nil then
+    Exit;
+
   // MacOS Service menu incoming setup
   if not Assigned(DCApp._serviceProvider) then
   begin
@@ -236,14 +255,28 @@ end;
 class procedure TDarwinApplicationUtil.performService(const serviceName: String
   );
 var
+  DCApp: TDCCocoaApplication;
   pboard: NSPasteboard;
   ok: Boolean;
 begin
+  DCApp:= DCApplication;
+  if DCApp = nil then
+    Exit;
   pboard:= NSPasteboard.pasteboardWithUniqueName;
-  ok:= TDCCocoaApplication(NSApp).writeSelectionToPasteboard_types(
-    pboard , nil );
+  ok:= DCApp.writeSelectionToPasteboard_types( pboard , nil );
   if ok then
     NSPerformService( NSSTR(serviceName), pboard );
+end;
+
+class function TDarwinApplicationUtil.getSelectedFilenames: TStringArray;
+var
+  DCApp: TDCCocoaApplication;
+begin
+  Result:= nil;
+  DCApp:= DCApplication;
+  if (DCApp = nil) or (not Assigned(DCApp.serviceMenuGetFilenames)) then
+    Exit;
+  Result:= DCApp.serviceMenuGetFilenames();
 end;
 
 class procedure TDarwinApplicationUtil.installFNKeyTap;
