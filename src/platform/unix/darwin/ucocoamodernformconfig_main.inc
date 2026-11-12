@@ -834,22 +834,17 @@ const
         'MainForm.GoForward',
         'NSToolbarFlexibleSpaceItem',
 
-        'MainForm.iCloud',
         'MainForm.network',
-        'MainForm.Stash',
         'NSToolbarFlexibleSpaceItem',
 
         'MainForm.ShowMode',
         'NSToolbarFlexibleSpaceItem',
 
         'MainForm.Share',
-        'MainForm.AirDrop',
         'NSToolbarFlexibleSpaceItem',
 
-        'MainForm.QuickLook',
         'MainForm.Tag',
         'MainForm.Go',
-        'MainForm.FinderReveal',
         'MainForm.FinderInfo',
         'NSToolbarFlexibleSpaceItem',
         'MainForm.Command',
