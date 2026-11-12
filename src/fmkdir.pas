@@ -68,15 +68,13 @@ procedure TfrmMkDir.RefreshExample;
 var
   sPath: String;
 begin
-  if not cbExtended.Checked then
-    lblExample.Caption:= ' '
-  else begin
-    sPath:= TrimPath(cbMkDir.Text);
-    if StrBegins(sPath, '<') then
-      lblExample.Caption:= sReplace(Copy(sPath, 2, MaxInt))
-    else
-      lblExample.Caption:= ' '
-  end;
+  sPath:= TrimPath(cbMkDir.Text);
+  if cbExtended.Checked and StrBegins(sPath, '<') then
+    lblExample.Caption:= sReplace(Copy(sPath, 2, MaxInt))
+  else
+    lblExample.Caption:= EmptyStr;
+  // Hidden while empty, so it leaves no blank gap above the buttons
+  lblExample.Visible:= lblExample.Caption <> EmptyStr;
 end;
 
 procedure TfrmMkDir.cbMkDirKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);

@@ -3307,7 +3307,12 @@ begin
         Application.ShowMenuGlyphs:= sbgAlways
       else
         Application.ShowMenuGlyphs:= sbgNever;
+{$IFDEF DARWIN}
+      // Native macOS buttons never carry icons
+      Application.ShowButtonGlyphs := sbgNever;
+{$ELSE}
       Application.ShowButtonGlyphs := TApplicationShowGlyphs(GetValue(Node, 'ShowButtonGlyphs', Integer(Application.ShowButtonGlyphs)));
+{$ENDIF}
     end;
 
     { Ignore list page }

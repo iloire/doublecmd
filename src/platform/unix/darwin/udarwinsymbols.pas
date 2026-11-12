@@ -25,8 +25,9 @@ uses
 function RenderSymbol(const Symbol: String; Px: Integer; GlyphColor: NSColor;
   BadgeColor: NSColor = nil): TBitmap;
 
-// Toolbar glyph for a command icon name such as 'cm_refresh', in the text
-// colour of the current appearance. nil when the command has no symbol.
+// Toolbar glyph for a command icon name such as 'cm_refresh' (or a dialog
+// button icon such as 'list-add'), in the text colour of the current
+// appearance. nil when the name has no symbol.
 function CommandSymbolBitmap(const IconName: String; Px: Integer): TBitmap;
 
 function RGBColor(RGB: LongWord): NSColor;
@@ -43,7 +44,7 @@ type
   end;
 
 const
-  COMMAND_SYMBOLS: array[0..57] of TCommandSymbol = (
+  COMMAND_SYMBOLS: array[0..66] of TCommandSymbol = (
     (Command: 'cm_refresh';             Symbol: 'arrow.clockwise'),
     (Command: 'cm_runterm';             Symbol: 'terminal'),
     (Command: 'cm_options';             Symbol: 'gearshape'),
@@ -101,7 +102,17 @@ const
     (Command: 'cm_symlink';             Symbol: 'link'),
     (Command: 'cm_setfileproperties';   Symbol: 'info.circle'),
     (Command: 'cm_fileproperties';      Symbol: 'info.circle'),
-    (Command: 'cm_exit';                Symbol: 'power')
+    (Command: 'cm_exit';                Symbol: 'power'),
+    // Small buttons inside dialogs (dmComData.ilButtons)
+    (Command: 'list-add';               Symbol: 'plus'),
+    (Command: 'list-remove';            Symbol: 'minus'),
+    (Command: 'auto-complete';          Symbol: 'text.badge.checkmark'),
+    (Command: 'choose-filter';          Symbol: 'line.3.horizontal.decrease.circle'),
+    (Command: 'choose-variable';        Symbol: 'percent'),
+    (Command: 'open-picture-dialog';    Symbol: 'photo'),
+    (Command: 'media-playback-start';   Symbol: 'play.fill'),
+    (Command: 'input-keyboard';         Symbol: 'keyboard'),
+    (Command: 'choose-hotkey';          Symbol: 'command')
   );
 
 function RGBColor(RGB: LongWord): NSColor;

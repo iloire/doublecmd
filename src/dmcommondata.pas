@@ -53,7 +53,8 @@ implementation
 
 uses
   Math, Types, LCLVersion, Generics.Collections, uVectorImage, uPixMapManager,
-  uGlobs, uDCUtils;
+  uGlobs, uDCUtils
+  {$IFDEF DARWIN}, uDarwinSymbols{$ENDIF};
 
 {$R *.lfm}
 
@@ -184,6 +185,10 @@ begin
 
   for AName in ANames do
   begin
+{$IFDEF DARWIN}
+    ABitmap:= CommandSymbolBitmap(AName, ASize);
+    if (ABitmap = nil) then
+{$ENDIF}
     ABitmap:= PixMapManager.GetThemeIcon(AName, ASize, False);
     if (ABitmap = nil) then ABitmap:= TBitmap.Create;
 

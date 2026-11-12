@@ -151,6 +151,7 @@ uses
   , LCLStrConsts, CocoaConfig
   , BaseUnix, Errors, fFileProperties
   , uQuickLook, uOpenDocThumb, uDarwinApplication, uDarwinFile, uDefaultTerminal
+  , uDarwinDialogs
   {$ELSEIF DEFINED(UNIX)}
   , BaseUnix, Errors, fFileProperties, uJpegThumb, uOpenDocThumb
     {$IF NOT DEFINED(HAIKU)}
@@ -680,6 +681,8 @@ begin
   {$ENDIF}
 
   {$IF DEFINED(DARWIN)}
+  InitDarwinDialogs;
+
   if TDarwinFileUtil.isMountSupported then
   begin
     with frmMain do

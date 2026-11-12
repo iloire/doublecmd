@@ -194,6 +194,9 @@ begin
   cbIconsSizeChange(nil);
   cbDiskIconsSizeChange(nil);
   cbIconsOnButtons.Checked := Application.ShowButtonGlyphs = sbgAlways;
+  {$IFDEF DARWIN}
+  cbIconsOnButtons.Visible := False;
+  {$ENDIF}
 end;
 
 function TfrmOptionsIcons.Save: TOptionsEditorSaveFlags;
