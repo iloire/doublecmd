@@ -2026,7 +2026,7 @@ begin
   gToolbarPathToBeRelativeTo := EnvVarCommanderPath;
   gToolbarPathModifierElements := [];
 
-  gDriveBar1 := True;
+  gDriveBar1 := {$IFnDEF DARWIN}True{$ELSE}False{$ENDIF};
   gDriveBar2 := True;
   gDriveBarFlat := True;
   gDrivesListButton := True;
@@ -2036,10 +2036,10 @@ begin
   gCurDir := True;
   gTabHeader := True;
   gStatusBar := True;
-  gCmdLine := True;
+  gCmdLine := {$IFnDEF DARWIN}True{$ELSE}False{$ENDIF};
   gLogWindow := False;
   gTermWindow := False;
-  gKeyButtons := True;
+  gKeyButtons := {$IFnDEF DARWIN}True{$ELSE}False{$ENDIF};
   gInterfaceFlat := True;
   gDriveInd := False;
   gDriveFreeSpace := True;
