@@ -88,6 +88,15 @@ type
     function CompareTwoNodeOfConfigurationOptionTree(Node1, Node2: TTreeNode): integer;
     function CycleThroughOptionEditors(bForceSaving:boolean):boolean;
     procedure MakeVisible(Data: PtrInt);
+{$IFDEF DARWIN}
+    procedure BuildDarwinTree;
+    procedure ApplyDarwinStyle;
+    procedure tvDarwinCustomDrawItem(Sender: TCustomTreeView; Node: TTreeNode;
+      State: TCustomDrawState; Stage: TCustomDrawStage;
+      var PaintImages, DefaultDraw: Boolean);
+    procedure tvDarwinChanging(Sender: TObject; Node: TTreeNode; var AllowChange: Boolean);
+    procedure tvDarwinCollapsing(Sender: TObject; Node: TTreeNode; var AllowCollapse: Boolean);
+{$ENDIF}
   protected
     procedure CMThemeChanged(var Message: TLMessage); message CM_THEMECHANGED;
   public
@@ -110,7 +119,8 @@ implementation
 
 uses
   HelpIntfs, LCLProc, LCLVersion, LazUTF8, LResources, Menus, Translations, Graphics,
-  DCStrUtils, uTranslator, uLng, uGlobsPaths, fMain;
+  DCStrUtils, uTranslator, uLng, uGlobsPaths, fMain
+  {$IFDEF DARWIN}, ImgList, uDarwinOptionsTree{$ENDIF};
 
 var
   LastOpenedEditor: TOptionsEditorClass = nil;
@@ -203,6 +213,9 @@ end;
 
 procedure SortConfigurationOptionsOnLeftTree;
 begin
+{$IFDEF DARWIN}
+  Exit; // the macOS tree keeps its fixed section order
+{$ENDIF}
   if frmOptions<>nil then frmOptions.tvTreeView.CustomSort(@frmOptions.CompareTwoNodeOfConfigurationOptionTree);
 end;
 
@@ -215,6 +228,9 @@ begin
   TreeFilterEdit.Visible:= (OptionsSearchCache.Count > 0);
 {$IFDEF DARWIN}
   self.BorderIcons:= self.BorderIcons - [biMinimize];
+  // Room for the wider sidebar plus the widest pages
+  if Width < 1000 then Width:= 1000;
+  if Height < 640 then Height:= 640;
 {$ENDIF}
 end;
 
@@ -295,6 +311,8 @@ begin
   Done:= True;
   AFind:= TreeFilterEdit.Text;
   if Length(AFind) = 0 then Exit(True);
+  // Section headers have no editor; they show when a page under them matches
+  if aOptionsEditorView = nil then Exit(False);
 
   AFind:= UTF8LowerCase(AFind);
   AClassName:= LowerCase(aOptionsEditorView.EditorClass.ClassName);
@@ -389,6 +407,10 @@ procedure TfrmOptions.CreateOptionsEditorList;
   end;
 begin
   FOptionsEditorList:= TOptionsEditorViews.Create;
+{$IFDEF DARWIN}
+  BuildDarwinTree;
+  Exit;
+{$ENDIF}
   AddEditors(OptionsEditorClassList, nil);
   case gCollapseConfigurationOptionsTree of
     ctsFullExpand: ; //By legacy, it was doing automaticall the tvTreeView.FullExpand;
@@ -455,6 +477,11 @@ begin
     EditorClassName := LastOpenedEditor.ClassName;
   FOldEditor := nil;
   inherited Create(TheOwner);
+{$IFDEF DARWIN}
+  // Before any page is created: pages can force the native buttons into
+  // existence, after which glyph changes no longer reach them
+  ApplyDarwinStyle;
+{$ENDIF}
   CreateOptionsEditorList;
   SelectEditor(EditorClassName);
 {$if lcl_fullversion >= 2030000}
@@ -597,6 +624,193 @@ begin
     end;
   end;
 end;
+
+{$IFDEF DARWIN}
+procedure TfrmOptions.BuildDarwinTree;
+var
+  Images: TImageList;
+  Entry: TOptionsTreeEntry;
+  Section, ParentNode, Node: TTreeNode;
+  View: TOptionsEditorView;
+  I: Integer;
+
+  procedure CollectViews(List: TOptionsEditorClassList);
+  var
+    J: Integer;
+    V: TOptionsEditorView;
+  begin
+    for J:= 0 to List.Count - 1 do
+    begin
+      V:= TOptionsEditorView.Create;
+      V.EditorClass:= List[J].EditorClass;
+      V.LegacyOrderIndex:= FOptionsEditorList.Count;
+      FOptionsEditorList.Add(V);
+      if List[J].HasChildren then CollectViews(List[J].Children);
+    end;
+  end;
+
+  function FindView(const AClassName: String): TOptionsEditorView;
+  var
+    J: Integer;
+  begin
+    for J:= 0 to FOptionsEditorList.Count - 1 do
+      if SameText(FOptionsEditorList[J].EditorClass.ClassName, AClassName) then
+        Exit(FOptionsEditorList[J]);
+    Result:= nil;
+  end;
+
+  function AddSection(const ATitle: String): TTreeNode;
+  begin
+    Result:= tvTreeView.Items.Add(nil, ATitle);
+    Result.ImageIndex:= -1;
+    Result.SelectedIndex:= -1;
+    Result.Data:= nil;
+  end;
+
+  function AddPage(AParent: TTreeNode; V: TOptionsEditorView): TTreeNode;
+  var
+    Small, Large: TBitmap;
+  begin
+    Result:= tvTreeView.Items.AddChild(AParent, V.EditorClass.GetTitle);
+    Result.Data:= V;
+    Result.ImageIndex:= -1;
+    Small:= OptionsPageIcon(V.EditorClass.ClassName, Images.Width, 1);
+    Large:= OptionsPageIcon(V.EditorClass.ClassName, Images.Width, 2);
+    try
+      if Assigned(Small) and Assigned(Large) then
+        Result.ImageIndex:= Images.AddMultipleResolutions([TCustomBitmap(Small), TCustomBitmap(Large)]);
+    finally
+      Small.Free;
+      Large.Free;
+    end;
+    Result.SelectedIndex:= Result.ImageIndex;
+    V.TreeNode:= Result;
+  end;
+
+begin
+  CollectViews(OptionsEditorClassList);
+
+  Images:= TImageList.Create(Self);
+  Images.Width:= 20;
+  Images.Height:= 20;
+  Images.Scaled:= True;
+  Images.RegisterResolutions([20, 40]);
+
+  tvTreeView.Items.BeginUpdate;
+  try
+    Section:= nil;
+    ParentNode:= nil;
+    for Entry in OptionsTreeLayout do
+    begin
+      if Entry.Section <> '' then
+        Section:= AddSection(Entry.Section);
+      View:= FindView(Entry.EditorClass);
+      if (View = nil) or Assigned(View.TreeNode) or (Section = nil) then Continue;
+      if (Entry.Level > 0) and Assigned(ParentNode) then
+        AddPage(ParentNode, View)
+      else
+        ParentNode:= AddPage(Section, View);
+    end;
+
+    // Pages the layout doesn't know about (new upstream pages) still show up
+    Section:= nil;
+    for I:= 0 to FOptionsEditorList.Count - 1 do
+      if FOptionsEditorList[I].TreeNode = nil then
+      begin
+        if Section = nil then Section:= AddSection(rsOptSectionOther);
+        AddPage(Section, FOptionsEditorList[I]);
+      end;
+
+    // Drop sections that ended up empty
+    Node:= tvTreeView.Items.GetFirstNode;
+    while Assigned(Node) do
+    begin
+      ParentNode:= Node.GetNextSibling;
+      if not Node.HasChildren then Node.Delete;
+      Node:= ParentNode;
+    end;
+  finally
+    tvTreeView.Items.EndUpdate;
+  end;
+
+  tvTreeView.Images:= Images;
+  tvTreeView.ImagesWidth:= Images.Width;
+  tvTreeView.FullExpand;
+end;
+
+procedure TfrmOptions.ApplyDarwinStyle;
+begin
+  with tvTreeView do
+  begin
+    Options:= [tvoReadOnly, tvoRowSelect, tvoToolTips, tvoKeepCollapsedNodes];
+    BorderStyle:= bsNone;
+    DefaultItemHeight:= 28;
+    Indent:= 16;
+    // Fits the longest page title ("Tree View Menu Colors") at depth 2
+    Constraints.MinWidth:= 250;
+    if Width < 250 then Width:= 250;
+    OnAdvancedCustomDrawItem:= @tvDarwinCustomDrawItem;
+    OnChanging:= @tvDarwinChanging;
+    OnCollapsing:= @tvDarwinCollapsing;
+  end;
+
+  // Page title: large, left-aligned text instead of a grey bar
+  with pnlCaption do
+  begin
+    ParentColor:= True;
+    ParentBackground:= True;
+    BevelOuter:= bvNone;
+    Alignment:= taLeftJustify;
+    BorderSpacing.Left:= 16;
+    BorderSpacing.Top:= 8;
+    Height:= 40;
+    Font.Color:= clDefault;
+    Font.Size:= 17;
+    Font.Style:= [fsBold];
+  end;
+
+  // Plain macOS push buttons: drop the stock check/cross/question glyphs
+  btnOK.Kind:= bkCustom;
+  btnCancel.Kind:= bkCustom;
+  btnHelp.Kind:= bkCustom;
+  btnOK.GlyphShowMode:= gsmNever;
+  btnCancel.GlyphShowMode:= gsmNever;
+  btnHelp.GlyphShowMode:= gsmNever;
+  TreeFilterEdit.TextHint:= 'Search';
+end;
+
+procedure TfrmOptions.tvDarwinCustomDrawItem(Sender: TCustomTreeView;
+  Node: TTreeNode; State: TCustomDrawState; Stage: TCustomDrawStage;
+  var PaintImages, DefaultDraw: Boolean);
+begin
+  if Stage <> cdPrePaint then Exit;
+  if Node.Data = nil then
+  begin
+    // Section header: small, bold, grey
+    Sender.Canvas.Font.Style:= [fsBold];
+    Sender.Canvas.Font.Size:= 11;
+    Sender.Canvas.Font.Color:= clGrayText;
+  end
+  else
+  begin
+    Sender.Canvas.Font.Style:= [];
+    Sender.Canvas.Font.Size:= 0;
+    Sender.Canvas.Font.Color:= clDefault;
+  end;
+end;
+
+procedure TfrmOptions.tvDarwinChanging(Sender: TObject; Node: TTreeNode;
+  var AllowChange: Boolean);
+begin
+  AllowChange:= (Node = nil) or (Node.Data <> nil);
+end;
+
+procedure TfrmOptions.tvDarwinCollapsing(Sender: TObject; Node: TTreeNode;
+  var AllowCollapse: Boolean);
+begin
+  AllowCollapse:= False;
+end;
+{$ENDIF}
 
 finalization
   FreeAndNil(OptionsSearchCache);
