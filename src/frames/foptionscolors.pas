@@ -83,7 +83,13 @@ type
 {$IF DEFINED(DARKWIN)}
   private
     FAppMode: Integer;
+    FLoading: Boolean;
+    lblColorSet: TLabel;
+    procedure rgDarkModeClick(Sender: TObject);
+    procedure UpdateColorSetLabel;
 {$ENDIF}
+  private
+    procedure SaveColors;
   protected
     procedure Init; override;
     procedure Load; override;
@@ -106,7 +112,7 @@ uses
   {$IF not DEFINED(darwin)}
   , uDarkStyle
   {$ELSE}
-  , uDarwinApplication
+  , uDarwinApplication, uOSForms
   {$ENDIF}
 {$ENDIF}
   ;
@@ -164,21 +170,82 @@ begin
   FAppMode:= gAppMode;
   {$IFDEF LCLWIN32}if g_darkModeSupported then{$ENDIF}
   begin
-    ParseLineToList(rsDarkModeOptions, rgDarkMode.Items);
-    cmbGroup.ItemIndex:= cmbGroup.Items.Add(rsDarkMode);
-    nbColors.PageIndex:= cmbGroup.ItemIndex;
+    // Appearance is a global switch, not a colour category: show it at the
+    // top of the page, applied live, and say which colour set is being edited.
+    ParseLineToList(rsAppearanceOptions, rgDarkMode.Items);
+    rgDarkMode.Caption:= rsAppearance;
+    rgDarkMode.Columns:= rgDarkMode.Items.Count;
+    rgDarkMode.Parent:= Self;
+    rgDarkMode.AnchorSideLeft.Control:= Self;
+    rgDarkMode.AnchorSideTop.Control:= Self;
+    rgDarkMode.AnchorSideRight.Control:= Self;
+    rgDarkMode.AnchorSideRight.Side:= asrBottom;
+    rgDarkMode.Anchors:= [akTop, akLeft, akRight];
+    rgDarkMode.BorderSpacing.Top:= 12;
+    rgDarkMode.BorderSpacing.Left:= 12;
+    rgDarkMode.BorderSpacing.Right:= 12;
+    rgDarkMode.OnClick:= @rgDarkModeClick;
+
+    lblColorSet:= TLabel.Create(Self);
+    lblColorSet.Parent:= Self;
+    lblColorSet.AnchorSideLeft.Control:= Self;
+    lblColorSet.AnchorSideTop.Control:= rgDarkMode;
+    lblColorSet.AnchorSideTop.Side:= asrBottom;
+    lblColorSet.BorderSpacing.Left:= 18;
+    lblColorSet.BorderSpacing.Top:= 12;
+
+    cmbGroup.AnchorSideTop.Control:= lblColorSet;
+    cmbGroup.AnchorSideTop.Side:= asrBottom;
   end;
 {$ENDIF}
 end;
 
+{$IF DEFINED(DARKWIN)}
+procedure TfrmOptionsColors.UpdateColorSetLabel;
+begin
+  if DarkStyle then
+    lblColorSet.Caption:= rsColorSetDark
+  else begin
+    lblColorSet.Caption:= rsColorSetLight;
+  end;
+end;
+
+procedure TfrmOptionsColors.rgDarkModeClick(Sender: TObject);
+begin
+  if FLoading then Exit;
+  case rgDarkMode.ItemIndex of
+    0: gAppMode:= 1;
+    1: gAppMode:= 3;
+    2: gAppMode:= 2;
+  end;
+  if gAppMode = FAppMode then Exit;
+  // Keep edits made to the current colour set, then switch sets
+  SaveColors;
+  FAppMode:= gAppMode;
+  TDarwinApplicationUtil.setTheme(gAppMode);
+  try
+    SaveEarlyConfig;
+  except
+    on E: Exception do MessageDlg(E.Message, mtError, [mbOK], 0);
+  end;
+  LoadSettings;
+end;
+{$ENDIF}
+
 procedure TfrmOptionsColors.Load;
 begin
 {$IF DEFINED(DARKWIN)}
-  case FAppMode of
-    1: rgDarkMode.ItemIndex:= 0;
-    2: rgDarkMode.ItemIndex:= 1;
-    3: rgDarkMode.ItemIndex:= 2;
+  FLoading:= True;
+  try
+    case FAppMode of
+      1: rgDarkMode.ItemIndex:= 0;
+      3: rgDarkMode.ItemIndex:= 1;
+      2: rgDarkMode.ItemIndex:= 2;
+    end;
+  finally
+    FLoading:= False;
   end;
+  UpdateColorSetLabel;
 {$ENDIF}
   with gColors.Viewer^ do
   begin
@@ -262,26 +329,11 @@ end;
 function TfrmOptionsColors.Save: TOptionsEditorSaveFlags;
 begin
   Result:= [];
-{$IF DEFINED(DARKWIN)}
-  case rgDarkMode.ItemIndex of
-    0: gAppMode:= 1;
-    1: gAppMode:= 2;
-    2: gAppMode:= 3;
-  end;
-  if gAppMode <> FAppMode then
-  try
-    FAppMode:= gAppMode;
-    {$IF not DEFINED(darwin)}
-    if g_darkModeSupported then
-      Result:= [oesfNeedsRestart];
-    {$ELSE}
-    TDarwinApplicationUtil.setTheme( gAppMode );
-    {$ENDIF}
-    SaveEarlyConfig;
-  except
-    on E: Exception do MessageDlg(E.Message, mtError, [mbOK], 0);
-  end;
-{$ENDIF}
+  SaveColors;
+end;
+
+procedure TfrmOptionsColors.SaveColors;
+begin
   with gColors.Viewer^ do
   begin
     BookFontColor:= cbBookText.Selected;

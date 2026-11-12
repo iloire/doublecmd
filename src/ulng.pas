@@ -837,8 +837,10 @@ resourcestring
   rsOptConfigTreeState = 'Full expand;Full collapse';
   rsOptDifferFramePosition = 'Active frame panel on left, inactive on right (legacy);Left frame panel on left, right on right';
   //-------------------------------
-  rsDarkMode = 'Dark mode';
-  rsDarkModeOptions = 'Auto;Enabled;Disabled';
+  rsAppearance = 'Appearance';
+  rsAppearanceOptions = 'Match system;Light;Dark';
+  rsColorSetLight = 'Editing the colours used in Light appearance.';
+  rsColorSetDark = 'Editing the colours used in Dark appearance.';
   //-------------------------------
   rsDriveFreeSpaceIndicator = 'Drive Free Space Indicator';
   //-------------------------------
